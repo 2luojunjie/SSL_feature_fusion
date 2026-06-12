@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import importlib
 import logging
 import tempfile
+from importlib.util import find_spec
 from pathlib import Path
 from typing import Any
 
@@ -43,6 +43,7 @@ class WavLMExtractor(BaseSSLExtractor):
         device: str = "cuda",
         layer: str = "last",
         freeze: bool = True,
+        cache_dir: str | None = None,
     ) -> None:
         if layer not in {"last", "mean_last4"}:
             raise ValueError("WavLM layer must be 'last' or 'mean_last4'.")
@@ -55,8 +56,13 @@ class WavLMExtractor(BaseSSLExtractor):
         self.model_name = model_name
         self.layer = layer
         self.device = resolve_device(device)
-        self.feature_extractor = AutoFeatureExtractor.from_pretrained(model_name)
-        self.model = AutoModel.from_pretrained(model_name, output_hidden_states=True).to(self.device)
+        resolved_cache_dir = str(Path(cache_dir).expanduser().resolve()) if cache_dir else None
+        self.feature_extractor = AutoFeatureExtractor.from_pretrained(model_name, cache_dir=resolved_cache_dir)
+        self.model = AutoModel.from_pretrained(
+            model_name,
+            output_hidden_states=True,
+            cache_dir=resolved_cache_dir,
+        ).to(self.device)
         self.model.eval()
 
         if freeze:
@@ -109,7 +115,7 @@ class Emotion2VecExtractor(BaseSSLExtractor):
         self._load_model()
 
     def _load_model(self) -> None:
-        funasr_spec = importlib.util.find_spec("funasr")
+        funasr_spec = find_spec("funasr")
         if funasr_spec is not None:
             try:
                 from funasr import AutoModel
@@ -124,7 +130,7 @@ class Emotion2VecExtractor(BaseSSLExtractor):
                     f"Original error: {exc}"
                 ) from exc
 
-        modelscope_spec = importlib.util.find_spec("modelscope")
+        modelscope_spec = find_spec("modelscope")
         if modelscope_spec is not None:
             try:
                 from modelscope.pipelines import pipeline
@@ -217,6 +223,7 @@ def build_extractor(config: dict[str, Any]) -> BaseSSLExtractor:
     model_type = str(config.get("model_type", "wavlm")).lower()
     model_name = str(config.get("model_name", ""))
     device = str(config.get("device", "cuda"))
+    cache_dir = config.get("cache_dir")
 
     if model_type == "wavlm":
         return WavLMExtractor(
@@ -224,6 +231,7 @@ def build_extractor(config: dict[str, Any]) -> BaseSSLExtractor:
             device=device,
             layer=str(config.get("layer", "last")),
             freeze=bool(config.get("freeze", True)),
+            cache_dir=str(cache_dir) if cache_dir else None,
         )
     if model_type in {"emotion2vec", "e2v"}:
         return Emotion2VecExtractor(

@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import csv
 import hashlib
+import os
 from pathlib import Path
 from typing import Any
 
@@ -33,6 +34,18 @@ def feature_filename(audio_path: str) -> str:
     path = Path(audio_path)
     digest = hashlib.sha1(str(path.resolve()).encode("utf-8")).hexdigest()[:12]
     return f"{path.stem}_{digest}.pt"
+
+
+def configure_huggingface_cache(cache_dir: str | None) -> None:
+    """Use a project-local Hugging Face cache unless the user already set one."""
+    if not cache_dir:
+        return
+
+    cache_path = Path(cache_dir).expanduser().resolve()
+    cache_path.mkdir(parents=True, exist_ok=True)
+    os.environ.setdefault("HF_HOME", str(cache_path))
+    os.environ.setdefault("HF_HUB_CACHE", str(cache_path / "hub"))
+    os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
 
 
 def write_metadata(metadata_path: Path, rows: list[dict[str, Any]]) -> None:
@@ -71,6 +84,7 @@ def main() -> None:
     if not samples:
         raise RuntimeError(f"No valid samples found for dataset '{dataset_name}' under {root_dir}")
 
+    configure_huggingface_cache(ssl_cfg.get("cache_dir"))
     extractor = build_extractor(ssl_cfg)
     metadata_rows: list[dict[str, Any]] = []
     failures: list[str] = []
@@ -81,7 +95,7 @@ def main() -> None:
 
         try:
             if out_path.exists() and not overwrite:
-                saved = torch.load(out_path, map_location="cpu")
+                saved = torch.load(out_path, map_location="cpu", weights_only=True)
                 feature = saved["feature"]
             else:
                 wav, sr = load_audio(

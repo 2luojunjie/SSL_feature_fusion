@@ -29,7 +29,7 @@ class SSLFeatureDataset(Dataset):
         feature_path = Path(str(row["feature_path"])).expanduser()
         if not feature_path.is_absolute():
             feature_path = (self.metadata_csv.parent / feature_path).resolve()
-        saved = torch.load(feature_path, map_location="cpu")
+        saved = torch.load(feature_path, map_location="cpu", weights_only=True)
         feature = saved["feature"].to(torch.float32)
         label = int(saved.get("label", row.get("label")))
         if feature.ndim != 2:

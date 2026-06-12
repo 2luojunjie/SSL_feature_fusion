@@ -25,10 +25,12 @@ ser_ssl_feature_extraction/
 
 ```bash
 cd ser_ssl_feature_extraction
-pip install -r requirements.txt
+pip install -r requirements-cpu.txt
 ```
 
-For CUDA, install a `torch` and `torchaudio` build that matches your local CUDA version. The optional `funasr` and `modelscope` packages are needed only when extracting emotion2vec features.
+`requirements-cpu.txt` pins dependency versions and uses the Tsinghua PyPI mirror by default. PyTorch and torchaudio use the official PyTorch CPU wheel index as an extra source because CPU-specific wheels such as `torch==2.5.1+cpu` are published there.
+
+For CUDA, install a `torch` and `torchaudio` build that matches your local CUDA version instead of using `requirements-cpu.txt`. The optional `funasr` and `modelscope` packages are needed only when extracting emotion2vec features.
 
 For a CPU-only Miniconda environment on Windows:
 
@@ -42,8 +44,9 @@ python -m src.extract_features --config configs/feature_extract.yaml
 If you prefer manual commands:
 
 ```powershell
-conda env create -f environment-cpu.yml
+conda create -n ser_ssl_cpu python=3.10 pip -y
 conda activate ser_ssl_cpu
+pip install -r requirements-cpu.txt
 ```
 
 ## Prepare RAVDESS
@@ -80,7 +83,7 @@ ssl:
   model_type: wavlm
   model_name: microsoft/wavlm-base-plus
   layer: mean_last4
-  device: cuda
+  device: cpu
 ```
 
 Run:
@@ -157,7 +160,7 @@ for features, lengths, labels, attention_mask in loader:
 
 ```bash
 cd ser_ssl_feature_extraction
-pip install -r requirements.txt
+pip install -r requirements-cpu.txt
 python -m src.extract_features --config configs/feature_extract.yaml
 ```
 

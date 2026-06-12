@@ -1,19 +1,19 @@
 name: ser_ssl_cpu
-channels:
-  - pytorch
-  - conda-forge
 dependencies:
   - python=3.10
   - pip
-  - pytorch
-  - torchaudio
-  - cpuonly
-  - numpy
-  - pandas
-  - tqdm
-  - pyyaml
-  - soundfile
-  - transformers
-  - huggingface_hub
-  - safetensors
-  - tokenizers
+  - pip:
+      - --index-url https://pypi.tuna.tsinghua.edu.cn/simple
+      - --extra-index-url https://download.pytorch.org/whl/cpu
+      - --trusted-host pypi.tuna.tsinghua.edu.cn
+      - torch==2.5.1+cpu
+      - torchaudio==2.5.1+cpu
+      - transformers==4.46.3
+      - numpy==1.26.4
+      - pandas==2.2.3
+      - tqdm==4.67.1
+      - pyyaml==6.0.2
+      - soundfile==0.12.1
+      - safetensors==0.4.5
+      - huggingface_hub==0.26.5
+      - tokenizers==0.20.3

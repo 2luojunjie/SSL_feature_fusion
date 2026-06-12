@@ -8,6 +8,7 @@ __pycache__/
 .venv/
 venv/
 env/
+.cache/
 
 # Local datasets and generated features
 ser_ssl_feature_extraction/data/*
