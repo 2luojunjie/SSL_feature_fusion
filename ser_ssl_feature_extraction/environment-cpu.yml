@@ -1,0 +1,19 @@
+name: ser_ssl_cpu
+channels:
+  - pytorch
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - pytorch
+  - torchaudio
+  - cpuonly
+  - numpy
+  - pandas
+  - tqdm
+  - pyyaml
+  - soundfile
+  - transformers
+  - huggingface_hub
+  - safetensors
+  - tokenizers

@@ -1,0 +1,31 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments and local package caches
+.conda/
+.venv/
+venv/
+env/
+
+# Local datasets and generated features
+ser_ssl_feature_extraction/data/*
+!ser_ssl_feature_extraction/data/README.md
+ser_ssl_feature_extraction/features/*
+!ser_ssl_feature_extraction/features/README.md
+
+# Model and experiment artifacts
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.npy
+*.npz
+*.log
+
+# Editors and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

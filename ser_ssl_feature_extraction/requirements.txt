@@ -1,0 +1,12 @@
+torch
+torchaudio
+transformers
+numpy
+pandas
+tqdm
+pyyaml
+soundfile
+
+# Optional for emotion2vec, depending on your local model release:
+funasr
+modelscope

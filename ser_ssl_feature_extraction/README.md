@@ -1,0 +1,174 @@
+# SER SSL Feature Extraction
+
+This project extracts and caches self-supervised speech features for speech emotion recognition (SER). It supports WavLM through Hugging Face Transformers and provides an adapter for emotion2vec through FunASR or ModelScope.
+
+The project only handles SSL feature extraction, saving, and loading. It does not implement a CNN-Transformer classifier or any training loop.
+
+## Project Layout
+
+```text
+ser_ssl_feature_extraction/
+├── configs/feature_extract.yaml
+├── data/
+├── features/
+├── src/
+│   ├── audio_utils.py
+│   ├── dataset_parser.py
+│   ├── ssl_extractors.py
+│   ├── extract_features.py
+│   └── feature_dataset.py
+├── requirements.txt
+└── README.md
+```
+
+## Install
+
+```bash
+cd ser_ssl_feature_extraction
+pip install -r requirements.txt
+```
+
+For CUDA, install a `torch` and `torchaudio` build that matches your local CUDA version. The optional `funasr` and `modelscope` packages are needed only when extracting emotion2vec features.
+
+For a CPU-only Miniconda environment on Windows:
+
+```powershell
+cd D:\MyCode\SER\SSL_feature_fusion\emotion2vec\ser_ssl_feature_extraction
+powershell -ExecutionPolicy Bypass -File .\setup_cpu_env.ps1
+conda activate ser_ssl_cpu
+python -m src.extract_features --config configs/feature_extract.yaml
+```
+
+If you prefer manual commands:
+
+```powershell
+conda env create -f environment-cpu.yml
+conda activate ser_ssl_cpu
+```
+
+## Prepare RAVDESS
+
+Download and extract RAVDESS manually, then place it under:
+
+```text
+ser_ssl_feature_extraction/data/RAVDESS/
+```
+
+Actor subfolders are fine because the parser recursively scans `.wav` files.
+
+## Configure
+
+Edit `configs/feature_extract.yaml`.
+
+Important fields:
+
+- `dataset.name`: currently `ravdess`
+- `dataset.root_dir`: dataset root directory
+- `audio.sample_rate`: default `16000`
+- `audio.max_duration`: crop or pad duration in seconds, or `null`
+- `ssl.model_type`: `wavlm` or `emotion2vec`
+- `ssl.model_name`: model id or local path
+- `output.feature_dir`: output cache directory
+- `output.overwrite`: whether to regenerate existing `.pt` files
+
+## Extract WavLM Features
+
+The default config uses:
+
+```yaml
+ssl:
+  model_type: wavlm
+  model_name: microsoft/wavlm-base-plus
+  layer: mean_last4
+  device: cuda
+```
+
+Run:
+
+```bash
+python -m src.extract_features --config configs/feature_extract.yaml
+```
+
+If CUDA is unavailable, the extractor automatically falls back to CPU and prints a message.
+
+## Extract emotion2vec Features
+
+Change the SSL section:
+
+```yaml
+ssl:
+  model_type: emotion2vec
+  model_name: emotion2vec/emotion2vec_plus_seed
+  device: cuda
+```
+
+Then run:
+
+```bash
+python -m src.extract_features --config configs/feature_extract.yaml
+```
+
+emotion2vec releases may expose different APIs. The environment-specific logic is isolated in `src/ssl_extractors.py` inside `Emotion2VecExtractor`. If your local model returns a different key or requires a different pipeline task, adjust that class only.
+
+## Output Format
+
+Each audio file is saved as one `.pt` file:
+
+```python
+{
+    "feature": torch.Tensor,  # [T, D] or [1, D]
+    "label": int,
+    "label_name": str,
+    "path": str,
+    "speaker": str,
+    "sr": int,
+    "ssl_model": str,
+}
+```
+
+The script also writes `metadata.csv`:
+
+```text
+feature_path,audio_path,label,label_name,speaker,num_frames,feature_dim
+```
+
+Failed audio files are recorded in `failed.txt` without stopping the whole extraction run.
+
+## Load Features For Later Models
+
+```python
+from src.feature_dataset import SSLFeatureDataset, ssl_feature_collate_fn
+from torch.utils.data import DataLoader
+
+dataset = SSLFeatureDataset("features/ravdess_wavlm_mean_last4/metadata.csv")
+loader = DataLoader(dataset, batch_size=4, shuffle=True, collate_fn=ssl_feature_collate_fn)
+
+for features, lengths, labels, attention_mask in loader:
+    print(features.shape)
+    print(lengths)
+    print(labels)
+    print(attention_mask.shape)
+    break
+```
+
+`features` has shape `[B, T_max, D]`, `lengths` stores the valid frame counts, and `attention_mask` marks valid frames with `1` and padded frames with `0`.
+
+## Minimal Run
+
+```bash
+cd ser_ssl_feature_extraction
+pip install -r requirements.txt
+python -m src.extract_features --config configs/feature_extract.yaml
+```
+
+## Common Issues
+
+CUDA is unavailable: use `ssl.device: cpu`, or install a CUDA-compatible PyTorch build. The WavLM extractor falls back to CPU automatically.
+
+Audio sampling rates differ: `load_audio` resamples every file to `audio.sample_rate`, which is `16000` by default.
+
+emotion2vec loading fails: install `funasr` or `modelscope`, check the model id or local model path, and adjust `Emotion2VecExtractor` if your installed release uses a different output key.
+
+Feature lengths differ: this is normal for frame-level SSL features. Use `ssl_feature_collate_fn` to pad features and create `attention_mask`.
+
+Windows path issues: use forward slashes in YAML when possible, or quote paths such as `"D:/datasets/RAVDESS"`.
