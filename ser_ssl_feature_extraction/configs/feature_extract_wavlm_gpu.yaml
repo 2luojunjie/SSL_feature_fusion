@@ -1,0 +1,20 @@
+dataset:
+  name: ravdess
+  root_dir: ./data/RAVDESS
+
+audio:
+  sample_rate: 16000
+  max_duration: 6.0
+  normalize: true
+
+ssl:
+  model_type: wavlm
+  model_name: microsoft/wavlm-base-plus
+  layer: mean_last4
+  device: cuda
+  cache_dir: ./.cache/huggingface
+
+output:
+  feature_dir: ./features/ravdess_wavlm_mean_last4_gpu
+  save_format: pt
+  overwrite: false

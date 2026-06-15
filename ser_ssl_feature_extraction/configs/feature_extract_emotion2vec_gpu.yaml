@@ -1,0 +1,19 @@
+dataset:
+  name: ravdess
+  root_dir: ./data/RAVDESS
+
+audio:
+  sample_rate: 16000
+  max_duration: 6.0
+  normalize: true
+
+ssl:
+  model_type: emotion2vec
+  model_name: emotion2vec/emotion2vec_plus_seed
+  device: cuda
+  cache_dir: ./.cache/huggingface
+
+output:
+  feature_dir: ./features/ravdess_emotion2vec_gpu
+  save_format: pt
+  overwrite: false

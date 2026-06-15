@@ -9,6 +9,10 @@ The project only handles SSL feature extraction, saving, and loading. It does no
 ```text
 ser_ssl_feature_extraction/
 ├── configs/feature_extract.yaml
+├── configs/feature_extract_wavlm_cpu.yaml
+├── configs/feature_extract_wavlm_gpu.yaml
+├── configs/feature_extract_emotion2vec_cpu.yaml
+├── configs/feature_extract_emotion2vec_gpu.yaml
 ├── data/
 ├── features/
 ├── src/
@@ -18,6 +22,8 @@ ser_ssl_feature_extraction/
 │   ├── extract_features.py
 │   └── feature_dataset.py
 ├── requirements.txt
+├── requirements-cpu.txt
+├── requirements-gpu-cu121.txt
 └── README.md
 ```
 
@@ -30,7 +36,7 @@ pip install -r requirements-cpu.txt
 
 `requirements-cpu.txt` pins dependency versions and uses the Tsinghua PyPI mirror by default. PyTorch and torchaudio use the official PyTorch CPU wheel index as an extra source because CPU-specific wheels such as `torch==2.5.1+cpu` are published there.
 
-For CUDA, install a `torch` and `torchaudio` build that matches your local CUDA version instead of using `requirements-cpu.txt`. The optional `funasr` and `modelscope` packages are needed only when extracting emotion2vec features.
+For CUDA 12.1 servers, use `requirements-gpu-cu121.txt`. It pins the same project dependencies but installs `torch==2.5.1+cu121` and `torchaudio==2.5.1+cu121` from the official PyTorch CUDA 12.1 wheel index.
 
 For a CPU-only Miniconda environment on Windows:
 
@@ -48,6 +54,26 @@ conda create -n ser_ssl_cpu python=3.10 pip -y
 conda activate ser_ssl_cpu
 pip install -r requirements-cpu.txt
 ```
+
+For a GPU Miniconda environment on a Linux server with a CUDA 12.1-compatible NVIDIA driver:
+
+```bash
+cd /path/to/ser_ssl_feature_extraction
+bash setup_gpu_env.sh
+conda activate ser_ssl_gpu
+python -m src.extract_features --config configs/feature_extract_emotion2vec_gpu.yaml
+```
+
+Manual GPU commands:
+
+```bash
+conda create -n ser_ssl_gpu python=3.10 pip -y
+conda activate ser_ssl_gpu
+pip install -r requirements-gpu-cu121.txt
+python -c "import torch; print(torch.__version__); print(torch.cuda.is_available()); print(torch.version.cuda)"
+```
+
+If your server driver does not support CUDA 12.1 wheels, replace the PyTorch wheel index and package suffix in `requirements-gpu-cu121.txt` with the CUDA version supported by your server, for example `cu118`.
 
 ## Prepare RAVDESS
 
@@ -74,6 +100,13 @@ Important fields:
 - `output.feature_dir`: output cache directory
 - `output.overwrite`: whether to regenerate existing `.pt` files
 
+Ready-to-use config templates:
+
+- `configs/feature_extract_wavlm_cpu.yaml`
+- `configs/feature_extract_wavlm_gpu.yaml`
+- `configs/feature_extract_emotion2vec_cpu.yaml`
+- `configs/feature_extract_emotion2vec_gpu.yaml`
+
 ## Extract WavLM Features
 
 The default config uses:
@@ -90,6 +123,13 @@ Run:
 
 ```bash
 python -m src.extract_features --config configs/feature_extract.yaml
+```
+
+Or choose a template directly:
+
+```bash
+python -m src.extract_features --config configs/feature_extract_wavlm_cpu.yaml
+python -m src.extract_features --config configs/feature_extract_wavlm_gpu.yaml
 ```
 
 If CUDA is unavailable, the extractor automatically falls back to CPU and prints a message.
@@ -109,6 +149,13 @@ Then run:
 
 ```bash
 python -m src.extract_features --config configs/feature_extract.yaml
+```
+
+Or choose a template directly:
+
+```bash
+python -m src.extract_features --config configs/feature_extract_emotion2vec_cpu.yaml
+python -m src.extract_features --config configs/feature_extract_emotion2vec_gpu.yaml
 ```
 
 emotion2vec releases may expose different APIs. The environment-specific logic is isolated in `src/ssl_extractors.py` inside `Emotion2VecExtractor`. If your local model returns a different key or requires a different pipeline task, adjust that class only.
