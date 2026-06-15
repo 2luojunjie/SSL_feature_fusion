@@ -7,26 +7,13 @@ audio:
   max_duration: 6.0
   normalize: true
 
-# ssl:
-#   model_type: wavlm
-#   model_name: microsoft/wavlm-base-plus
-#   layer: mean_last4
-#   device: cpu
-#   cache_dir: ./.cache/huggingface
-
-# output:
-#   feature_dir: ./features/ravdess_wavlm_mean_last4
-#   save_format: pt
-#   overwrite: false
-
-
 ssl:
   model_type: emotion2vec
   model_name: emotion2vec/emotion2vec_plus_seed
-  device: cpu
+  device: cuda
   cache_dir: ./.cache/huggingface
 
 output:
-  feature_dir: ./features/ravdess_emotion2vec
+  feature_dir: ./features/ravdess_emotion2vec_gpu
   save_format: pt
   overwrite: false
