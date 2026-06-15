@@ -9,7 +9,7 @@ audio:
 
 ssl:
   model_type: emotion2vec
-  model_name: emotion2vec/emotion2vec_plus_seed
+  model_name: iic/emotion2vec_plus_seed
   device: cpu
   cache_dir: ./.cache/huggingface
 
